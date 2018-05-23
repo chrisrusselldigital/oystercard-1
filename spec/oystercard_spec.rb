@@ -42,12 +42,23 @@ end
 
 context "#touch_in" do
   it "can touch in" do
+    subject.top_up(Oystercard::MINIMUM_BALANCE)
     subject.touch_in
     expect(subject).to be_in_journey
   end
+  it "doesn't let you touch in if you do not have the minimum balance." do
+    expect { subject.touch_in }.to raise_error "You don't have sufficient funds."
+  end
 end
 
-
+context "#touch_out" do
+  it "can touch out" do
+    subject.top_up(Oystercard::MINIMUM_BALANCE)
+    subject.touch_in
+    subject.touch_out
+    expect(subject).not_to be_in_journey
+  end
+end
 
 
 
