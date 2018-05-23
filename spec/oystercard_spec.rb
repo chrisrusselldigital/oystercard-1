@@ -35,12 +35,17 @@ subject(:card) { Oystercard.new }
   end
 
 context "#in_journey" do
-  it 'sets user status to in journey' do
-    expect(card.in_journey).to eq(true).or eq(false)
+  it 'it is initially not in a journey' do
+    expect(subject).not_to be_in_journey
   end
 end
 
-
+context "#touch_in" do
+  it "can touch in" do
+    subject.touch_in
+    expect(subject).to be_in_journey
+  end
+end
 
 
 
