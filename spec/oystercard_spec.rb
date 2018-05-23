@@ -1,70 +1,92 @@
 require 'oystercard'
 
 describe Oystercard do
-subject(:card) { Oystercard.new }
-let(:station) { double :station }
 
-  context '#initialize' do
-    it 'starts with a balance of zero' do
-      expect(card.balance).to be == 0
+  let(:entry_station) { double :station }
+  let(:exit_station) { double :station }
+
+  describe '#initialize' do
+    it 'initializes with a balance of 0' do
+      expect(subject.balance).to eq 0
+    end
+
+    it 'has an empty list of journeys by default' do
+      expect(subject.journeys).to be_empty
     end
   end
 
-  context "#balance" do
-    it "Return the current balance" do
-      expect(card.balance).to be_a Integer
+  describe '#top_up' do
+    it 'tops up the card with money' do
+      expect { subject.top_up 1 }.to change { subject.balance }.by 1
+    end
+
+    it 'throws an exception when balance goes above 90' do
+      maximum_balance = described_class::MAXIMUM_BALANCE
+      subject.top_up(maximum_balance)
+      expect { subject.top_up 1 }.to raise_error("Maximum balance of #{described_class::MAXIMUM_BALANCE} exceeded")
     end
   end
 
-  context "#top_up" do
-    it 'can top up the balance' do
-      expect { card.top_up 1 }.to change{ card.balance }.by 1
-    end
+  it 'is initially not in a journey' do
+    expect(subject).not_to be_in_journey
+  end
 
-    it "raises an error if the maximum balance is exceeded" do
-      maximum_balance = Oystercard::MAXIMUM_BALANCE
-      card.top_up(maximum_balance)
-      expect{ card.top_up 1 }.to raise_error "maximum balance of #{maximum_balance} exceeded."
+  describe '#in_journey?' do
+    it 'returns true or false' do
+      expect(subject.in_journey?).to be(true).or be(false)
     end
   end
 
-context "#in_journey" do
-  it 'it is initially not in a journey' do
-    expect(card).not_to be_in_journey
-  end
-end
-
-context "#touch_in" do
-  it "can touch in" do
-    card.top_up(Oystercard::MINIMUM_BALANCE)
-    card.touch_in(station)
-    expect(card).to be_in_journey
-  end
-  it "doesn't let you touch in if you do not have the minimum balance." do
-    expect { card.touch_in(station) }.to raise_error "You don't have sufficient funds."
+  context 'when there is not enough money on the card' do
+    describe '#touch_in' do
+      it 'raises an error if insufficient funds to travel' do
+        expect { subject.touch_in(entry_station) }.to raise_error("You don't have sufficient funds.")
+      end
+    end
   end
 
-  it 'stores the entry station' do
-    card.top_up(Oystercard::MINIMUM_BALANCE)
-    card.touch_in(station)
-    expect(card.entry_station).to eq station
+  context 'when there is money on the card' do
+    let(:journeys){ {entry_station: entry_station, exit_station: exit_station} }
+
+    before { subject.top_up(described_class::MINIMUM_BALANCE) }
+
+    it 'stores a journey' do
+      subject.touch_in(entry_station)
+      subject.touch_out(exit_station)
+      expect(subject.journeys).to eq ({entry_station => exit_station})
+    end
+
+    describe '#touch_in' do
+      it 'starts a journey' do
+        subject.touch_in(entry_station)
+        expect(subject).to be_in_journey
+      end
+
+      it 'remembers the entry station after touch_in' do
+        subject.touch_in(entry_station)
+        expect(subject.entry_station).to eq entry_station
+      end
+    end
   end
-end
 
-context "#touch_out" do
-  it "can touch out" do
-    card.top_up(Oystercard::MINIMUM_BALANCE)
-    card.touch_in(station)
-    card.touch_out
-    expect(card).not_to be_in_journey
+  context 'when oystercard is already in a journey' do
+    before { subject.top_up(described_class::MINIMUM_BALANCE) }
+    before { subject.touch_in(entry_station) }
+
+    describe '#touch_out' do
+      it 'ends a journey' do
+        subject.touch_out(exit_station)
+        expect(subject).not_to be_in_journey
+      end
+
+      it 'charges card on touchout' do
+        expect { subject.touch_out(exit_station) }.to change { subject.balance }.by -described_class::MINIMUM_CHARGE
+      end
+
+      it 'stores exit station' do
+        subject.touch_out(exit_station)
+        expect(subject.exit_station).to eq exit_station
+      end
+    end
   end
-
-  it 'deducts the correct amount from the fare on touch out' do
-    card.top_up(Oystercard::MINIMUM_BALANCE)
-    card.touch_in(station)
-    expect { card.touch_out }.to change{card.balance}.by -(Oystercard::MINIMUM_CHARGE)
-  end
-end
-
-
 end

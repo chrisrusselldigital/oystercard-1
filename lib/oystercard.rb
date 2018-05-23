@@ -1,6 +1,6 @@
 class Oystercard
 
-attr_reader :balance, :in_journey, :entry_station
+attr_reader :balance, :in_journey, :entry_station, :exit_station, :journeys
 
 MAXIMUM_BALANCE = 90
 MINIMUM_BALANCE = 1
@@ -8,10 +8,11 @@ MINIMUM_CHARGE = 3
 
 def initialize
   @balance = 0
+  @journeys = {}
 end
 
 def top_up(amount)
-  fail "maximum balance of 90 exceeded." if (amount + self.balance) > MAXIMUM_BALANCE
+  fail "Maximum balance of #{MAXIMUM_BALANCE} exceeded" if (amount + self.balance) > MAXIMUM_BALANCE
   @balance += amount
 end
 
@@ -24,14 +25,13 @@ def touch_in(station)
   @entry_station = station
 end
 
-def touch_out
+def touch_out(station)
   deduct(MINIMUM_CHARGE)
+  @exit_station = station
+  @journeys[@entry_station] = @exit_station
   @entry_station = nil
 end
 
-def entry_station
-  @entry_station
-end
 
 private
 def deduct(amount)
