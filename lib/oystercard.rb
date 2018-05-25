@@ -1,4 +1,5 @@
 require_relative 'station'
+require_relative 'journey'
 
 class Oystercard
 
@@ -10,7 +11,7 @@ MINIMUM_CHARGE = 3
 
 def initialize
   @balance = 0
-  @journeys = {}
+  @journeys = []
 end
 
 def top_up(amount)
@@ -30,7 +31,7 @@ end
 def touch_out(station)
   deduct(MINIMUM_CHARGE)
   @exit_station = station
-  @journeys[@entry_station] = @exit_station
+  @journeys << {@entry_station => @exit_station}
   @entry_station = nil
 end
 

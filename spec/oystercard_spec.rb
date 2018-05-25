@@ -46,14 +46,14 @@ describe Oystercard do
   end
 
   context 'when there is money on the card' do
-    let(:journeys){ {entry_station: entry_station, exit_station: exit_station} }
+    let(:journeys) { {entry_station => exit_station} }
 
     before { subject.top_up(described_class::MINIMUM_BALANCE) }
 
     it 'stores a journey' do
       subject.touch_in(entry_station)
       subject.touch_out(exit_station)
-      expect(subject.journeys).to eq ({entry_station => exit_station})
+      expect(subject.journeys).to include journeys
     end
 
     describe '#touch_in' do
